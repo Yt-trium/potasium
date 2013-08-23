@@ -1,7 +1,7 @@
-potasium
+Potasium
 ========
 
-befunge interpreter and debugger
+Befunge interpreter and debugger
 
 
 Debug Command
