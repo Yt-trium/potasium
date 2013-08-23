@@ -4,15 +4,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-using namespace std;
+#include <windows.h>
 
-/*
-CONSTANTE OF DEBUG LEVEL
-0 : NO DEBUG
-1 : NORMAL MESSAGE
-2 : FULL MESSAGE
-*/
-const int dbglvl = 0;
+using namespace std;
 
 int ask_int()
 {
@@ -28,11 +22,26 @@ int ask_char()
     cin >> value;
     return value;
 }
+char ask_key()
+{
+    char  ch;
+    DWORD  mode;
+    DWORD  counte;
+    HANDLE hstdin = GetStdHandle( STD_INPUT_HANDLE );
+
+    GetConsoleMode( hstdin, &mode );
+    SetConsoleMode( hstdin, 0 );
+    WaitForSingleObject( hstdin, INFINITE );
+    ReadConsole( hstdin, &ch, 1, &counte, NULL );
+    SetConsoleMode( hstdin, mode );
+    return ch;
+}
 
 int main()
 {
+    // -----------------------------------------------------------------
     // Open Source
-
+    // -----------------------------------------------------------------
     string srcFile;
     string tmp_string;
     unsigned int x_src = 0;
@@ -40,7 +49,25 @@ int main()
     unsigned int i = 0;
     unsigned int j = 0;
 
-    cout << "Welcom to Potassium Befunge Debugger" << endl;
+    bool debugger = true;
+    int id;
+
+    cout << "Welcom to Potassium Befunge Interpreter / Debugger" << endl;
+
+    // ACTIVATE ONLY FOR RELEASE
+    cout << "1. Interpreter" << endl << "2. Debugger" << endl;
+    cin >> id;
+    if(id == 1)
+    {
+        debugger = false;
+    }
+    else if(id == 2)
+    {
+        debugger = true;
+    }
+    else
+        return 1;
+
     cout << "Befunge Filename :" << endl;
     cin >> srcFile;
 
@@ -86,7 +113,10 @@ int main()
 
     fileStream.close();
 
-    // Interpreter
+    // -----------------------------------------------------------------
+    // Interprette / Debug
+    // -----------------------------------------------------------------
+
     bool notend = true;
     bool charMode = false;
 
@@ -102,20 +132,36 @@ int main()
 
     int *fs = NULL; // FAKE STACK
     fs = new int [0xFFF];
-    int fsa = 0;    // FAKE STACK ADDRESS
+    unsigned int fsa = 0;    // FAKE STACK ADDRESS
+
+    string output_save = "";
 
     srand (time(NULL));
 
+    // DEBUGGER VARS
+    HANDLE  hConsole;
+    hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    unsigned int x_d = 0;
+    unsigned int y_d = 0;
+
+    char bp[x_src][y_src];
+
+    for(i=0;i<y_src;i++)
+    {
+        for(j=0;j<x_src;j++)
+        {
+            bp[j][i] = 0;
+        }
+    }
+
+    bool execute = true;
+    bool stop = true;
+
     while(notend)
     {
-
-        if(dbglvl>=2)
+        if(execute)
         {
-            cout << src[x][y] << endl;
-            cout << "x : " << x << endl;
-            cout << "y : " << y << endl;
-        }
-
         if(charMode)
         {
             if(src[x][y] == '"')
@@ -181,7 +227,6 @@ int main()
                     direction = 1;
                 else
                     direction = -1;
-                fsa++;
             break;
             case '|':
                 fsa--;
@@ -190,7 +235,6 @@ int main()
                     direction = 2;
                 else
                     direction = -2;
-                fsa++;
             break;
             // OPERATION
             case '+':
@@ -276,12 +320,18 @@ int main()
             case '.':
                 fsa--;
                 tmp_i1 = fs[fsa];
-                cout << tmp_i1;
+                if(debugger)
+                    output_save += tmp_i1;
+                else
+                    cout << tmp_i1;
             break;
             case ',':
                 fsa--;
                 tmp_c1 = fs[fsa];
-                cout << tmp_c1;
+                if(debugger)
+                    output_save += tmp_c1;
+                else
+                    cout << tmp_c1;
             break;
             case '&':
                 fs[fsa] = ask_int();
@@ -348,18 +398,105 @@ int main()
                 return 1;
             break;
         }
+        trampoline = 1;
 
         if( x>x_src || y>y_src || x<0 || y<0)
         {
             cout << "Error : Out of prog !" << endl;
             return 1;
         }
-        if(dbglvl>=2)
-            cin.get();
+            if(debugger && bp[x][y] == 1)
+                stop = true;
+            if(stop && debugger)
+                execute = false;
+        }
+        if(debugger && stop)
+        {
+            switch(ask_key())
+            {
+                case 'z':
+                    y_d--;
+                    if(y_d<0)
+                        y_d = 0;
+                break;
+                case 's':
+                    y_d++;
+                    if(y_d>=y_src)
+                        y_d = y_src-1;
+                break;
+                case 'q':
+                    x_d--;
+                    if(x_d<0)
+                        x_d = 0;
+                break;
+                case 'd':
+                    x_d++;
+                    if(x_d>=x_src)
+                        x_d = x_src-1;
+                break;
+                case 9:         // TAB
+                    bp[x_d][y_d] = 1;
+                break;
+                case ' ':
+                    execute = true;
+                    stop = true;
+                break;
+                case 13:        // ENTER
+                    execute = true;
+                    stop = false;
+                break;
+                default:
+
+                break;
+            }
+        }
+        if(debugger)
+        {
+            system("CLS");
+            for(i=0;i<y_src;i++)
+            {
+                for(j=0;j<x_src;j++)
+                {
+                    if(j==x && i==y)            // POINTER
+                    {
+                        SetConsoleTextAttribute(hConsole, 0xAC);
+                        cout << src[j][i];
+                        SetConsoleTextAttribute(hConsole, 0x07);
+                    }
+                    else if(j==x_d && i==y_d)   // CURSOR
+                    {
+                        SetConsoleTextAttribute(hConsole, 0xCA);
+                        cout << src[j][i];
+                        SetConsoleTextAttribute(hConsole, 0x07);
+                    }
+                    else if(bp[j][i] != 0)   // BreakPoint
+                    {
+                        SetConsoleTextAttribute(hConsole, 0x0E);
+                        cout << src[j][i];
+                        SetConsoleTextAttribute(hConsole, 0x07);
+                    }
+                    else
+                        cout << src[j][i];
+                }
+                cout << endl;
+            }
+
+            for(j=0;j<x_src;j++)
+                cout << "-";
+            cout << endl;
+
+            cout << "STACK  : ";
+            for(i=0;i<fsa;i++)
+                cout << fs[i] << "(" << (char)fs[i] << ")"<< " ";
+            cout << endl;
+
+            cout << "OUTPUT : " << output_save << endl;
+        }
     }
 
     delete [] fs;
     fs = NULL;
 
+    ask_key();
     return 0;
 }
