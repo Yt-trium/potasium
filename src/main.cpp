@@ -55,6 +55,7 @@ int main()
     cout << "Welcom to Potassium Befunge Interpreter / Debugger" << endl;
 
     // ACTIVATE ONLY FOR RELEASE
+
     cout << "1. Interpreter" << endl << "2. Debugger" << endl;
     cin >> id;
     if(id == 1)
@@ -157,6 +158,7 @@ int main()
 
     bool execute = true;
     bool stop = true;
+    string str_search_result;
 
     while(notend)
     {
@@ -414,28 +416,47 @@ int main()
         {
             switch(ask_key())
             {
+                case 'Z':
                 case 'z':
+                case 'W':
+                case 'w':
                     y_d--;
                     if(y_d<0)
                         y_d = 0;
                 break;
+                case 'S':
                 case 's':
                     y_d++;
                     if(y_d>=y_src)
                         y_d = y_src-1;
                 break;
+                case 'Q':
                 case 'q':
+                case 'A':
+                case 'a':
                     x_d--;
                     if(x_d<0)
                         x_d = 0;
                 break;
+                case 'D':
                 case 'd':
                     x_d++;
                     if(x_d>=x_src)
                         x_d = x_src-1;
                 break;
+                case 'E':
+                case 'e':
+                    src[x_d][y_d] = ask_key();
+                break;
+                case 8:         // RETURN
+                    x = x_d;
+                    y = y_d;
+                break;
                 case 9:         // TAB
-                    bp[x_d][y_d] = 1;
+                    if(bp[x_d][y_d] == 1)
+                        bp[x_d][y_d] = 0;
+                    else
+                        bp[x_d][y_d] = 1;
                 break;
                 case ' ':
                     execute = true;
@@ -460,6 +481,12 @@ int main()
                     if(j==x && i==y)            // POINTER
                     {
                         SetConsoleTextAttribute(hConsole, 0xAC);
+                        cout << src[j][i];
+                        SetConsoleTextAttribute(hConsole, 0x07);
+                    }
+                    else if(j==x_d && i==y_d && bp[j][i] != 0)
+                    {
+                        SetConsoleTextAttribute(hConsole, 0xCE);
                         cout << src[j][i];
                         SetConsoleTextAttribute(hConsole, 0x07);
                     }
