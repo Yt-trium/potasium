@@ -372,7 +372,7 @@ int main()
             break;
             // PUSH VALUE
             default:
-                if(src[x][y] > '0' ||src[x][y] < '9')
+                if(src[x][y] >= '0' && src[x][y] <= '9')
                 {
                     fs[fsa] = src[x][y] - '0';
                     fsa++;
@@ -447,6 +447,13 @@ int main()
                 case 'E':
                 case 'e':
                     src[x_d][y_d] = ask_key();
+                break;
+                case '+':
+                    fs[fsa] = ask_key();
+                    fsa++;
+                break;
+                case '-':
+                    fsa--;
                 break;
                 case 8:         // RETURN
                     x = x_d;
